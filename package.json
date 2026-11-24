@@ -1,0 +1,50 @@
+{
+  "name": "mentora",
+  "version": "0.1.0",
+  "private": true,
+  "main": "desktop/main.cjs",
+  "description": "Local-first AI-powered learning and productivity platform",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/server.js",
+    "dev": "node --watch --import=tsx src/server.ts",
+    "verify": "npm run build && node dist/index.js",
+    "audit": "node dist/index.js --audit",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "desktop:dev": "npm run build && electron .",
+    "package:win": "npm run build && electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.1",
+    "@playwright/test": "^1.65.1",
+    "@types/node": "latest",
+    "@types/pdfkit": "^0.17.7",
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0",
+    "pdfkit": "^0.21.0",
+    "typescript": "latest"
+  },
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "mammoth": "^1.13.0",
+    "pdf-parse": "^2.4.5"
+  },
+  "build": {
+    "appId": "ai.mentora.desktop",
+    "productName": "MENTORA",
+    "asar": true,
+    "disableDefaultIgnoredFiles": true,
+    "directories": { "app": "desktop", "output": "release" },
+    "files": ["**/*"],
+    "extraResources": [
+      { "from": "dist", "to": "dist", "filter": ["**/*", "!win-unpacked{,/**/*}"] },
+      { "from": "public", "to": "public" },
+      { "from": "reports", "to": "reports" },
+      { "from": "desktop/runtime/node_modules", "to": "node_modules" },
+      { "from": "package.json", "to": "package.json" }
+    ],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "deleteAppDataOnUninstall": false }
+  }
+}

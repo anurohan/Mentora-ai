@@ -1,0 +1,10 @@
+export type WeatherSnapshot = { status: "live" | "cached" | "offline"; condition: "clear" | "cloudy" | "rain" | "unknown"; temperatureC?: number; observedAt?: string; location: string };
+type CacheEntry = { snapshot: WeatherSnapshot; expiresAt: number };
+const cache = new Map<string, CacheEntry>();
+const conditionFor = (code: number) => code === 0 ? "clear" : code <= 3 ? "cloudy" : code >= 51 ? "rain" : "unknown";
+export async function getWeather(location: string, options: { providerUrl?: string; now?: number; ttlMs?: number; fetchImpl?: typeof fetch } = {}): Promise<WeatherSnapshot> {
+  const key = location.trim().toLowerCase() || "default"; const now = options.now ?? Date.now(); const cached = cache.get(key); if (cached && cached.expiresAt > now) return { ...cached.snapshot, status: "cached" };
+  const providerUrl = options.providerUrl ?? process.env.MENTORA_WEATHER_PROVIDER_URL; const fetchImpl = options.fetchImpl ?? fetch;
+  if (!providerUrl) return cached ? { ...cached.snapshot, status: "cached" } : { status: "offline", condition: "unknown", location };
+  try { const url = providerUrl.replace("{location}", encodeURIComponent(location)); const response = await fetchImpl(url, { signal: AbortSignal.timeout(5000) }); if (!response.ok) throw new Error(`Weather provider returned ${response.status}`); const data = await response.json() as { current_weather?: Record<string, number>; current?: Record<string, number> }; const current = data.current_weather ?? data.current; const code = current?.weathercode ?? current?.weather_code; const temperature = current?.temperature ?? current?.temperature_2m; if (typeof code !== "number") throw new Error("Weather provider response is invalid"); const snapshot: WeatherSnapshot = { status: "live", condition: conditionFor(Number(code)), temperatureC: typeof temperature === "number" ? temperature : undefined, observedAt: new Date(now).toISOString(), location }; cache.set(key, { snapshot, expiresAt: now + (options.ttlMs ?? 900_000) }); return snapshot; } catch { return cached ? { ...cached.snapshot, status: "cached" } : { status: "offline", condition: "unknown", location }; }
+}

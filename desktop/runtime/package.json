@@ -1,0 +1,10 @@
+{
+  "name": "mentora-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "mammoth": "^1.13.0",
+    "pdf-parse": "^2.4.5"
+  }
+}
